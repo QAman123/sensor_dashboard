@@ -211,20 +211,29 @@ def main():
         # Get preset values
         preset = CHANNEL_PRESETS[selected_preset]
 
-        # Channel ID input
+        # Channel ID input (safe to show)
         channel_id = st.text_input(
             "Channel ID:",
             value=preset['channel_id'],
             help="ThingSpeak Channel ID"
         )
 
+        # Determine if using secret
+        using_secret_key = preset['api_key'] != ""
+
         # API Key input
-        api_key = st.text_input(
+        api_key_input = st.text_input(
             "Read API Key:",
-            value=preset['api_key'],
+            value="hidden" if using_secret_key else "",  # show placeholder if secret exists
             type="password",
-            help="Optional for public channels"
+            help="Optional: enter a new key for private channels"
         )
+
+        # If user typed a new key, use it; otherwise, use secret
+        if api_key_input != "" and api_key_input != "hidden":
+            api_key = api_key_input
+        else:
+            api_key = preset['api_key']
 
         # Results count
         results = st.selectbox(
@@ -338,7 +347,7 @@ def main():
             )
             fig_moisture.update_traces(line_color='#28a745', fill='tonexty')
             fig_moisture.update_layout(yaxis_range=[0, 100])
-            st.plotly_chart(fig_moisture, use_container_width=True)
+            st.plotly_chart(fig_moisture, width='stretch')
 
             # ADC Values
             fig_adc = px.line(
@@ -349,7 +358,7 @@ def main():
                 labels={'field2': 'ADC Value', 'created_at': 'Time'}
             )
             fig_adc.update_traces(line_color='#17a2b8')
-            st.plotly_chart(fig_adc, use_container_width=True)
+            st.plotly_chart(fig_adc, width='stretch')
 
         with chart_col2:
             # Battery chart
@@ -364,7 +373,7 @@ def main():
             # Add low battery warning line
             fig_battery.add_hline(y=3.3, line_dash="dash", line_color="red",
                                   annotation_text="Low Battery Warning")
-            st.plotly_chart(fig_battery, use_container_width=True)
+            st.plotly_chart(fig_battery, width='stretch')
 
             # WiFi Signal Strength (if available)
             df['signal_strength'] = df['field8'].apply(extract_signal_strength)
@@ -380,7 +389,7 @@ def main():
                 )
                 fig_signal.update_traces(line_color='#6f42c1')
                 fig_signal.update_layout(yaxis_range=[-90, -40])
-                st.plotly_chart(fig_signal, use_container_width=True)
+                st.plotly_chart(fig_signal, width='stretch')
 
         # Connection attempts chart
         st.subheader("🔄 Connection Attempts")
@@ -399,7 +408,7 @@ def main():
             color_discrete_map={'red': '#dc3545', 'green': '#28a745', 'blue': '#007bff'}
         )
         fig_attempts.update_layout(yaxis_range=[0, 3], showlegend=False)
-        st.plotly_chart(fig_attempts, use_container_width=True)
+        st.plotly_chart(fig_attempts, width='stretch')
 
         # Data table
         st.header("📋 Recent Readings")
@@ -417,7 +426,7 @@ def main():
         columns_to_show = ['Time', 'Moisture (%)', 'ADC Value', 'Battery (V)', 'Status', 'Log Message']
         st.dataframe(
             display_df[columns_to_show].tail(20).iloc[::-1],  # Reverse to show newest first
-            use_container_width=True,
+            width='stretch',
             hide_index=True
         )
 
